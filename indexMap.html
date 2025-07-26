@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bitcraft Map Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
+  ></script>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+      background-color: #222d44;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const imageWidth = 7676;
+    const imageHeight = 7676;
+    const imageBounds = [[0, 0], [imageHeight, imageWidth]];
+
+    const map = L.map('map', {
+      crs: L.CRS.Simple,
+      minZoom: -3,
+      maxZoom: 5,
+      zoomSnap: 0.1,
+      attributionControl: false,
+      zoomControl: false,      // hides + / - buttons
+      scrollWheelZoom: true,  // enables zooming with mouse wheel
+      dragging: true          // enables panning
+    }).setView(
+      [imageHeight / 2, imageWidth / 2],
+      0
+    );
+
+    L.imageOverlay('https://bitcraftmap.com/assets/maps/map.png', imageBounds).addTo(map);
+  </script>
+</body>
+</html>
