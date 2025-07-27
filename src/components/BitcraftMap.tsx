@@ -31,6 +31,21 @@ const BitcraftMap = () => {
 
     L.imageOverlay(bitcraftMapPng, imageBounds).addTo(map);
 
+    // Load markers from localStorage
+    const savedMarkers = localStorage.getItem("bitcraftMarkers");
+    if (savedMarkers) {
+      const markerPositions: [number, number][] = JSON.parse(savedMarkers);
+      const loadedMarkers: L.Circle[] = markerPositions.map((pos) =>
+        L.circle(pos, {
+          color: "black",
+          fillColor: "blue",
+          fillOpacity: 0.5,
+          radius: 7,
+        }).addTo(map)
+      );
+      setMarkers(loadedMarkers);
+    }
+
     map.on("click", (e: L.LeafletMouseEvent) => {
       if (e.originalEvent.ctrlKey) {
         const circle = L.circle(e.latlng, {
@@ -40,7 +55,16 @@ const BitcraftMap = () => {
           radius: 7,
         }).addTo(map);
 
-        setMarkers((prev) => [...prev, circle]);
+        setMarkers((prev) => {
+          const newMarkers = [...prev, circle];
+          // Save marker positions to localStorage
+          const positions = newMarkers.map((marker) => [
+            marker.getLatLng().lat,
+            marker.getLatLng().lng,
+          ]);
+          localStorage.setItem("bitcraftMarkers", JSON.stringify(positions));
+          return newMarkers;
+        });
       }
     });
 
@@ -54,9 +78,11 @@ const BitcraftMap = () => {
     };
   }, []);
 
+  // Update localStorage when markers are cleared
   const clearMarkers = () => {
     markers.forEach((marker) => marker.remove());
     setMarkers([]);
+    localStorage.removeItem("bitcraftMarkers");
   };
 
   return (
