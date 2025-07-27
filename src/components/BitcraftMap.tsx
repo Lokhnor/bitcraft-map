@@ -34,14 +34,35 @@ const BitcraftMap = () => {
     const savedMarkers = localStorage.getItem("bitcraftMarkers");
     if (savedMarkers) {
       const markerPositions: [number, number][] = JSON.parse(savedMarkers);
-      const loadedMarkers: L.Circle[] = markerPositions.map((pos) =>
-        L.circle(pos, {
+      const loadedMarkers: L.Circle[] = markerPositions.map((pos) => {
+        const circle = L.circle(pos, {
           color: "black",
           fillColor: "blue",
           fillOpacity: 0.5,
           radius: 7,
-        }).addTo(map)
-      );
+        }).addTo(map);
+
+        // Add click handler for confirmation and deletion
+        circle.on("click", () => {
+          if (window.confirm("Delete this marker?")) {
+            circle.remove();
+            setMarkers((prev) => {
+              const newMarkers = prev.filter((m) => m !== circle);
+              const positions = newMarkers.map((marker) => [
+                marker.getLatLng().lat,
+                marker.getLatLng().lng,
+              ]);
+              localStorage.setItem(
+                "bitcraftMarkers",
+                JSON.stringify(positions)
+              );
+              return newMarkers;
+            });
+          }
+        });
+
+        return circle;
+      });
       setMarkers(loadedMarkers);
     }
 
@@ -53,6 +74,25 @@ const BitcraftMap = () => {
           fillOpacity: 0.5,
           radius: 7,
         }).addTo(map);
+
+        // Add click handler for confirmation and deletion
+        circle.on("click", () => {
+          if (window.confirm("Delete this marker?")) {
+            circle.remove();
+            setMarkers((prev) => {
+              const newMarkers = prev.filter((m) => m !== circle);
+              const positions = newMarkers.map((marker) => [
+                marker.getLatLng().lat,
+                marker.getLatLng().lng,
+              ]);
+              localStorage.setItem(
+                "bitcraftMarkers",
+                JSON.stringify(positions)
+              );
+              return newMarkers;
+            });
+          }
+        });
 
         setMarkers((prev) => {
           const newMarkers = [...prev, circle];
