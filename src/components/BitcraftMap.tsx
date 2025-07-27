@@ -31,15 +31,13 @@ const BitcraftMap = () => {
 
     L.imageOverlay(bitcraftMapPng, imageBounds).addTo(map);
 
-    // Add click event to place red circles (only when holding Ctrl)
     map.on("click", (e: L.LeafletMouseEvent) => {
-      // Only place marker if Ctrl key is held down
       if (e.originalEvent.ctrlKey) {
         const circle = L.circle(e.latlng, {
-          color: "red",
-          fillColor: "#f03",
+          color: "black",
+          fillColor: "blue",
           fillOpacity: 0.5,
-          radius: 7, // Much smaller radius
+          radius: 7,
         }).addTo(map);
 
         setMarkers((prev) => [...prev, circle]);
@@ -48,7 +46,6 @@ const BitcraftMap = () => {
 
     mapInstanceRef.current = map;
 
-    // Cleanup function
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -57,7 +54,6 @@ const BitcraftMap = () => {
     };
   }, []);
 
-  // Function to clear all markers
   const clearMarkers = () => {
     markers.forEach((marker) => marker.remove());
     setMarkers([]);
