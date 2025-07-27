@@ -31,7 +31,6 @@ const BitcraftMap = () => {
 
     L.imageOverlay(bitcraftMapPng, imageBounds).addTo(map);
 
-    // Load markers from localStorage
     const savedMarkers = localStorage.getItem("bitcraftMarkers");
     if (savedMarkers) {
       const markerPositions: [number, number][] = JSON.parse(savedMarkers);
@@ -57,7 +56,6 @@ const BitcraftMap = () => {
 
         setMarkers((prev) => {
           const newMarkers = [...prev, circle];
-          // Save marker positions to localStorage
           const positions = newMarkers.map((marker) => [
             marker.getLatLng().lat,
             marker.getLatLng().lng,
@@ -78,11 +76,22 @@ const BitcraftMap = () => {
     };
   }, []);
 
-  // Update localStorage when markers are cleared
   const clearMarkers = () => {
     markers.forEach((marker) => marker.remove());
     setMarkers([]);
     localStorage.removeItem("bitcraftMarkers");
+  };
+
+  const handleZoomIn = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.zoomIn();
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.zoomOut();
+    }
   };
 
   return (
@@ -95,25 +104,71 @@ const BitcraftMap = () => {
           backgroundColor: "#222d44",
         }}
       />
-      {markers.length > 0 && (
+      {/* Zoom controls */}
+      <div
+        style={{
+          position: "fixed",
+          top: "10px",
+          left: "10px",
+          zIndex: 1000,
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
         <button
-          onClick={clearMarkers}
+          onClick={handleZoomIn}
           style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            zIndex: 1000,
             padding: "8px 16px",
-            backgroundColor: "#dc3545",
+            backgroundColor: "#007bff",
             color: "white",
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
-            fontSize: "14px",
+            fontSize: "18px",
           }}
         >
-          Clear All Markers ({markers.length})
+          +
         </button>
+        <button
+          onClick={handleZoomOut}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "18px",
+          }}
+        >
+          −
+        </button>
+      </div>
+      {markers.length > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            top: "10px",
+            right: "10px",
+            zIndex: 1000,
+          }}
+        >
+          <button
+            onClick={clearMarkers}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#dc3545",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
+            }}
+          >
+            Clear All Markers ({markers.length})
+          </button>
+        </div>
       )}
     </div>
   );
