@@ -237,7 +237,7 @@ const BitcraftMap = () => {
           boxShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
         }}
       >
-        <div style={{ marginBottom: "8px", fontSize: "14px", fontWeight: "bold" }}>
+        <div style={{ marginBottom: "8px", fontSize: "14px", fontWeight: "bold", color:"black" }}>
           Marker Color:
         </div>
         <div
