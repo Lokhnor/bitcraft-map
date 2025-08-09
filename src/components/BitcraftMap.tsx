@@ -3,10 +3,30 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import bitcraftMapPng from "../assets/map.png";
 
+interface MarkerData {
+  position: [number, number];
+  color: string;
+}
+
 const BitcraftMap = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [markers, setMarkers] = useState<L.Circle[]>([]);
+  const [selectedColor, setSelectedColor] = useState<string>("#d3d3d3");
+
+  // Define 10 colors for the color picker
+  const colors = [
+    "#57565D", // Light grey
+    "#875F45", // Light brown
+    "#5C6F4D", // Green
+    "#3388ff", // Blue
+    "#8a2be2", // Purple
+    "#ff3333", // Red
+    "#ff8833", // Orange
+    "#ffff33", // Yellow
+    "#ff33ff", // Magenta
+    "#33ffff", // Cyan
+  ];
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -33,12 +53,17 @@ const BitcraftMap = () => {
 
     const savedMarkers = localStorage.getItem("bitcraftMarkers");
     if (savedMarkers) {
-      const markerPositions: [number, number][] = JSON.parse(savedMarkers);
-      const loadedMarkers: L.Circle[] = markerPositions.map((pos) => {
-        const circle = L.circle(pos, {
+      const parsedData = JSON.parse(savedMarkers);
+      // Migrate old format (array of positions) to new format (array of MarkerData)
+      const markerData: MarkerData[] = Array.isArray(parsedData[0]) && typeof parsedData[0][0] === 'number'
+        ? parsedData.map((pos: [number, number]) => ({ position: pos, color: "#3388ff" }))
+        : parsedData;
+      
+      const loadedMarkers: L.Circle[] = markerData.map((data) => {
+        const circle = L.circle(data.position, {
           color: "black",
-          fillColor: "blue",
-          fillOpacity: 0.5,
+          fillColor: data.color,
+          fillOpacity: 1.0,
           radius: 7,
         }).addTo(map);
 
@@ -48,13 +73,13 @@ const BitcraftMap = () => {
             circle.remove();
             setMarkers((prev) => {
               const newMarkers = prev.filter((m) => m !== circle);
-              const positions = newMarkers.map((marker) => [
-                marker.getLatLng().lat,
-                marker.getLatLng().lng,
-              ]);
+              const markerData: MarkerData[] = newMarkers.map((marker) => ({
+                position: [marker.getLatLng().lat, marker.getLatLng().lng],
+                color: (marker.options as any).fillColor,
+              }));
               localStorage.setItem(
                 "bitcraftMarkers",
-                JSON.stringify(positions)
+                JSON.stringify(markerData)
               );
               return newMarkers;
             });
@@ -66,45 +91,7 @@ const BitcraftMap = () => {
       setMarkers(loadedMarkers);
     }
 
-    map.on("click", (e: L.LeafletMouseEvent) => {
-      if (e.originalEvent.ctrlKey) {
-        const circle = L.circle(e.latlng, {
-          color: "black",
-          fillColor: "blue",
-          fillOpacity: 0.5,
-          radius: 7,
-        }).addTo(map);
 
-        // Add click handler for confirmation and deletion
-        circle.on("click", () => {
-          if (window.confirm("Delete this marker?")) {
-            circle.remove();
-            setMarkers((prev) => {
-              const newMarkers = prev.filter((m) => m !== circle);
-              const positions = newMarkers.map((marker) => [
-                marker.getLatLng().lat,
-                marker.getLatLng().lng,
-              ]);
-              localStorage.setItem(
-                "bitcraftMarkers",
-                JSON.stringify(positions)
-              );
-              return newMarkers;
-            });
-          }
-        });
-
-        setMarkers((prev) => {
-          const newMarkers = [...prev, circle];
-          const positions = newMarkers.map((marker) => [
-            marker.getLatLng().lat,
-            marker.getLatLng().lng,
-          ]);
-          localStorage.setItem("bitcraftMarkers", JSON.stringify(positions));
-          return newMarkers;
-        });
-      }
-    });
 
     mapInstanceRef.current = map;
 
@@ -115,6 +102,58 @@ const BitcraftMap = () => {
       }
     };
   }, []);
+
+  // Separate useEffect for click handler that depends on selectedColor
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      if (e.originalEvent.ctrlKey) {
+        const circle = L.circle(e.latlng, {
+          color: "black",
+          fillColor: selectedColor,
+          fillOpacity: 1.0,
+          radius: 7,
+        }).addTo(map);
+
+        // Add click handler for confirmation and deletion
+        circle.on("click", () => {
+          if (window.confirm("Delete this marker?")) {
+            circle.remove();
+            setMarkers((prev) => {
+              const newMarkers = prev.filter((m) => m !== circle);
+              const markerData: MarkerData[] = newMarkers.map((marker) => ({
+                position: [marker.getLatLng().lat, marker.getLatLng().lng],
+                color: (marker.options as any).fillColor,
+              }));
+              localStorage.setItem(
+                "bitcraftMarkers",
+                JSON.stringify(markerData)
+              );
+              return newMarkers;
+            });
+          }
+        });
+
+        setMarkers((prev) => {
+          const newMarkers = [...prev, circle];
+          const markerData: MarkerData[] = newMarkers.map((marker) => ({
+            position: [marker.getLatLng().lat, marker.getLatLng().lng],
+            color: (marker.options as any).fillColor,
+          }));
+          localStorage.setItem("bitcraftMarkers", JSON.stringify(markerData));
+          return newMarkers;
+        });
+      }
+    };
+
+    map.on("click", handleMapClick);
+
+    return () => {
+      map.off("click", handleMapClick);
+    };
+  }, [selectedColor]);
 
   const clearMarkers = () => {
     markers.forEach((marker) => marker.remove());
@@ -184,6 +223,51 @@ const BitcraftMap = () => {
         >
           −
         </button>
+      </div>
+      {/* Color picker */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: "20px",
+          left: "20px",
+          zIndex: 1000,
+          backgroundColor: "rgba(255, 255, 255, 0.9)",
+          padding: "12px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
+        }}
+      >
+        <div style={{ marginBottom: "8px", fontSize: "14px", fontWeight: "bold" }}>
+          Marker Color:
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: "6px",
+          }}
+        >
+          {colors.map((color) => (
+            <button
+              key={color}
+              onClick={() => setSelectedColor(color)}
+              style={{
+                width: "30px",
+                height: "30px",
+                backgroundColor: color,
+                border: selectedColor === color ? "3px solid #333" : "2px solid #fff",
+                borderRadius: "6px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: selectedColor === color ? "0 0 8px rgba(0, 0, 0, 0.3)" : "0 1px 3px rgba(0, 0, 0, 0.2)",
+              }}
+              title={`Select ${color}`}
+            />
+          ))}
+        </div>
+        <div style={{ marginTop: "8px", fontSize: "12px", color: "#666" }}>
+          Ctrl+Click to place marker
+        </div>
       </div>
       {markers.length > 0 && (
         <div
