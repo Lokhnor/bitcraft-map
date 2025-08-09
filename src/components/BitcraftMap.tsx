@@ -64,7 +64,7 @@ const BitcraftMap = () => {
           color: "black",
           fillColor: data.color,
           fillOpacity: 1.0,
-          radius: 7,
+                     radius: 3.5,
         }).addTo(map);
 
         // Add click handler for confirmation and deletion
@@ -114,7 +114,7 @@ const BitcraftMap = () => {
           color: "black",
           fillColor: selectedColor,
           fillOpacity: 1.0,
-          radius: 7,
+                     radius: 3.5,
         }).addTo(map);
 
         // Add click handler for confirmation and deletion
